@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+#import os.path
+import tensorflow as tf
+import helper
+import warnings
+from distutils.version import LooseVersion
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL']='3'
+from glob import glob
+
+
+def system_check():
+    # Check TensorFlow Version
+    assert LooseVersion(tf.__version__) >= LooseVersion('1.0'), 'Please use TensorFlow version 1.0 or newer.  You are using {}'.format(tf.__version__)
+    print('TensorFlow Version: {}'.format(tf.__version__))
+
+    # Check for a GPU
+    if not tf.test.gpu_device_name():
+        warnings.warn('No GPU found. Please use a GPU to train your neural network.')
+    else:
+        print('Default GPU Device: {}'.format(tf.test.gpu_device_name()))
+
+
+def restore_graph(sess, model_dir, meta_file_name):
+    meta_file = model_dir+'/'+meta_file_name
+    saver = tf.train.import_meta_graph(meta_file)
+    saver.restore(sess, tf.train.latest_checkpoint(model_dir))
+    graph=tf.get_default_graph()
+    input_image = graph.get_tensor_by_name("image_input:0")
+    print("image_input = ",input_image)
+    keep_prob = graph.get_tensor_by_name("keep_prob:0")
+    print("keep_prob = ",keep_prob)
+    logits = graph.get_tensor_by_name("Reshape:0")
+    print("logits = ",logits)
+
+    return input_image, keep_prob, logits
+
+
+def run():
+
+    system_check()
+        
+    image_shape = (160, 576)
+    video_input_file = './project_video.mp4'
+    runs_dir = './runs'
+    model_dir = './model_saved'
+    meta_file_name = 'my_model-50.meta'
+
+    with tf.Session() as sess:
+
+        input_image, keep_prob, logits = restore_graph(sess, model_dir, meta_file_name)
+        # TODO: Save inference data using helper.save_inference_samples
+        helper.save_inference_video(runs_dir, video_input_file, sess, image_shape, logits, keep_prob, input_image)
+       
+        # OPTIONAL: Apply the trained model to a video
+        
+
+if __name__ == '__main__':
+    run()
+
